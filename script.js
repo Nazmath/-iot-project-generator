@@ -13,17 +13,16 @@ generateBtn.addEventListener('click', async () => {
         return;
     }
 
-    // UI Setup
+    // UI Setup: Show loading and hide previous output
     loader.classList.remove('hidden');
     output.classList.add('hidden');
     output.innerHTML = "";
 
-    const promptText = `Act as an expert IoT Engineer. Create a detailed project guide for: "${idea}". 
-    Include: Title, Description, Components Table, Circuit Connections, Code, and Working Principle.`;
+    const promptText = `Act as an expert IoT Engineer. Generate a full, detailed project guide for: "${idea}". Include Title, Components, Connections, and Code.`;
 
     try {
-        // CHANGED: Using 'gemini-pro' - the most stable model available
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${API_KEY}`;
+        // ULTIMATE STABLE URL (v1beta + gemini-1.5-flash)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
         const response = await fetch(url, {
             method: 'POST',
@@ -35,35 +34,34 @@ generateBtn.addEventListener('click', async () => {
 
         const data = await response.json();
 
-        // Check for API errors
+        // If Google sends back an error, we catch it here
         if (data.error) {
-            throw new Error(data.error.message);
+            console.error("Google Error:", data.error);
+            alert("AI Error: " + data.error.message);
+            return;
         }
 
+        // Successfully received the project guide
         if (data.candidates && data.candidates[0].content) {
-            let aiResponse = data.candidates[0].content.parts[0].text;
+            const aiText = data.candidates[0].content.parts[0].text;
             
-            // Format the AI text for the website
-            output.innerHTML = formatAIResponse(aiResponse);
+            // Basic Markdown to HTML converter
+            output.innerHTML = aiText
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/### (.*)/g, '<h3 style="color:#38bdf8; margin-top:20px;">$1</h3>')
+                .replace(/## (.*)/g, '<h2 style="color:#38bdf8; margin-top:25px;">$1</h2>')
+                .replace(/```cpp([\s\S]*?)```/g, '<div style="background:#000; padding:15px; border-radius:8px; margin:10px 0;"><pre><code>$1</code></pre></div>')
+                .replace(/\n/g, '<br>');
+
             output.classList.remove('hidden');
         } else {
-            throw new Error("AI returned no data. Check your Google AI Studio settings.");
+            alert("The AI returned an empty response. Try refreshing.");
         }
 
     } catch (error) {
         console.error("Technical Error:", error);
-        alert("⚠️ Error: " + error.message);
+        alert("Technical Error: " + error.message);
     } finally {
         loader.classList.add('hidden');
     }
 });
-
-// Function to make Markdown look like HTML
-function formatAIResponse(text) {
-    return text
-        .replace(/### (.*)/g, '<h3 style="color:#38bdf8; margin-top:20px;">$1</h3>')
-        .replace(/## (.*)/g, '<h2 style="color:#38bdf8; margin-top:25px;">$1</h2>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/```cpp([\s\S]*?)```/g, '<div style="background:#000; padding:15px; border-radius:8px; margin:10px 0;"><pre><code>$1</code></pre></div>')
-        .replace(/\n/g, '<br>');
-}
