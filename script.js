@@ -24,7 +24,6 @@ generateBtn.addEventListener('click', async () => {
         // ULTIMATE STABLE URL (v1beta + gemini-1.5-flash)
 // Change v1beta to v1 AND add -latest to the model name
 const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
-
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
